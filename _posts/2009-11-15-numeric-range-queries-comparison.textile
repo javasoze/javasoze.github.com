@@ -23,8 +23,8 @@ As part of the recent Lucene 2.9.x release, Uwe Schindler introduced NumericRang
 *FieldCacheQuery:*
 There is however, another approach by using the FieldCache:
 
-1) obtain the int[] from FieldCache.getInts()
-2) iterate thru each element and collect it as a hit if it falls within the specified range.
+# obtain the int[] from FieldCache.getInts()
+# iterate thru each element and collect it as a hit if it falls within the specified range.
 
 Code snippets:
 
@@ -116,6 +116,7 @@ Range %:
 Index Size - 5M docs, No longer measuring RangeQuery to stop beating the dead horse
 
 Range %:
+
 |_.NumericRangeQuery |_.FieldCacheRangeQuery |
 | 1% | 6 ms | 8 ms |
 | 5% | 15 ms | 11 ms |
@@ -126,6 +127,7 @@ Range %:
 
 Index Size - 10M docs
 Range %:
+
 |_.NumericRangeQuery |_.FieldCacheRangeQuery |
 | 1% | 10 ms | 16 ms |
 | 5% | 28 ms | 23 ms |
