@@ -30,14 +30,19 @@ A better alternative is to use the FieldCache to load into an integer array a ma
     Field("uid",myUID,Store.NO,
     Index.NOT_ANALYZED_NO_NORMS);
 {% endhighlight %}
+
 When IndexReader loads, we load the "map array":
+
 {% highlight java %}
     int[] uidArray = FieldCache.DEFAULT.getInts(indexReader,"uid");
 {% endhighlight %}
+
 This is done once for a new IndexReader, and at search time, the mapping is just an array lookup:
+
 {% highlight java %}
     int uid = uidArray[docid];
 {% endhighlight %}
+
 which is rather fast.
 
 The problem here is that the number of terms in the uid field is equal to or very close to the number of documents in the index. To load from the FieldCache, a random seek is done for each term, which makes loading the uidArray extremely slow. This is fine if IndexReader does not load very often, but unfortunately for us, in a realtime search system, we don't have the luxury of such assumption. (This also, as a side effect, increases the total number of terms in the index and may impact search performance)
