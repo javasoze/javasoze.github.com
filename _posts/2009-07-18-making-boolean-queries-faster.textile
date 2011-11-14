@@ -21,20 +21,20 @@ We see that this type of query has these patterns:
 
 When the number of clause is large, BooleanQuery can be rather slow.
 
-As of Lucene 2.4, Lucene query api has adopted DocIdSet, and DocIdSetIterator abstractions, which opened doors for various query optimizations. (IMHO, this is one of the best improvements in Lucene from an API stand point.)
+As of Lucene 2.4, Lucene query api has adopted "DocIdSet":http://lucene.apache.org/java/3_4_0/api/core/org/apache/lucene/search/DocIdSet.html, and "DocIdSetIterator":http://lucene.apache.org/java/3_4_0/api/core/org/apache/lucene/search/DocIdSetIterator.html abstractions, which opened doors for various query optimizations. (IMHO, this is one of the best improvements in Lucene from an API stand point.)
 
 For our project, we have quite a few OR-clauses, and the search performance was pretty bad.
 
-Instead, when the index loads, we load into memory a data structure very much like the FieldCache.StringIndex. In a 5 million index shard, for a field containing N values, memory footprint is approxmiately 20MB + N Strings.
+Instead, when the index loads, we load into memory a data structure very much like the FieldCache.StringIndex. In a 5 million index shard, for a field containing N values, memory footprint is approximately 20MB + N Strings.
 
-Given K clauses in our OR query, we build a BitSet with K bits turned on, each bit corresponding to an index into String array. (max bit is N)
+Given K clauses in our OR query, we build a bit-set with K bits turned on, each bit corresponding to an index into String array. (max bit is N)
 
-We then built a DocIdSetIterator that iterates the order array and checks to see if the order[i]-bit is turned on in the bitset.
+We then built a DocIdSetIterator that iterates the order array and checks to see if the order[i]-bit is turned on in the bit-set.
 
 The resulting performance is quite encouraging: As the number of clauses increases, the iteration time is capped. From our benchmark, when we get to 10+ clauses, the performance gain is approximately 8x!
 
 Here is a detailed write-up:
-"http://linkedin.jira.com/wiki/display/BOBO/Facet+Query":http://code.google.com/p/bobo-browse/wiki/QueryConstruction
+"http://linkedin.jira.com/wiki/display/BOBO/Facet+Query":http://linkedin.jira.com/wiki/display/BOBO/Facet+Query
 
 This is an example of how good API design can open doors to things such as what we were able to do.
 
