@@ -48,9 +48,8 @@ which is rather fast.
 The problem here is that the number of terms in the uid field is equal to or very close to the number of documents in the index. To load from the FieldCache, a random seek is done for each term, which makes loading the uidArray extremely slow. This is fine if IndexReader does not load very often, but unfortunately for us, in a realtime search system, we don't have the luxury of such assumption. (This also, as a side effect, increases the total number of terms in the index and may impact search performance)
 
 Lucky for us, Lucene 2.2 introduced Payloads, (a huge step towards flexible indexing), which is the ability to allow arbitrary data to be added to the posting list. In our case, we would create an arbitrary term for every document, e.g. Term("uid","_UID_"), and attach a 4-byte uid value to each posting:
-
-{% highlight java %}
 <code>
+{% highlight java %}
     class UIDTokenStream extends TokenStream{
       private Token token = new Token("_UID_",0,0);
       private byte[] buffer = new byte[4];
@@ -74,9 +73,8 @@ Lucky for us, Lucene 2.2 introduced Payloads, (a huge step towards flexible inde
     UIDTokenStream tokenStream = new UIDTokenStream();
     tokenStream.setUID(myUID);
     Field("uid",tokenStream);
-</code>
 {% endhighlight %}
-
+</code>
 When we load the uidArray, we do:
 
 {% highlight java %}
