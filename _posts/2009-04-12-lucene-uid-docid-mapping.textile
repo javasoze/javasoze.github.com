@@ -12,35 +12,39 @@ In many applications, it is very useful to have a quick way to map a Lucene doci
 A common and naive practice is to keep the UID in a Stored field, e.g.
 
 {% highlight java %}
-@Field("uid",myUID,Store.YES,Index.No);@
+Field("uid",myUID,Store.YES,Index.No);
 {% endhighlight %}
 
 and retrieve the uid via:
 
+{% highlight java %}
     int uid = Integer.parseInt(indexReader.document(docid).get("uid"));
+{% endhighlight %}
 
 When recall (the number of hit candidates) is large, this method is streaming from the stored file for each hit, and thus does not perform.
 
 A better alternative is to use the FieldCache to load into an integer array a mapping from docid to uid for each docid in the index ,e.g. 0 to indexReader.maxDoc()
 (assuming uid is kept in the indexed field) e.g.
 
+{% highlight java %}
     Field("uid",myUID,Store.NO,
     Index.NOT_ANALYZED_NO_NORMS);
-
+{% endhighlight %}
 When IndexReader loads, we load the "map array":
-
+{% highlight java %}
     int[] uidArray = FieldCache.DEFAULT.getInts(indexReader,"uid");
-
+{% endhighlight %}
 This is done once for a new IndexReader, and at search time, the mapping is just an array lookup:
-
+{% highlight java %}
     int uid = uidArray[docid];
-
+{% endhighlight %}
 which is rather fast.
 
 The problem here is that the number of terms in the uid field is equal to or very close to the number of documents in the index. To load from the FieldCache, a random seek is done for each term, which makes loading the uidArray extremely slow. This is fine if IndexReader does not load very often, but unfortunately for us, in a realtime search system, we don't have the luxury of such assumption. (This also, as a side effect, increases the total number of terms in the index and may impact search performance)
 
 Lucky for us, Lucene 2.2 introduced Payloads, (a huge step towards flexible indexing), which is the ability to allow arbitrary data to be added to the posting list. In our case, we would create an arbitrary term for every document, e.g. Term("uid","_UID_"), and attach a 4-byte uid value to each posting:
 
+{% highlight java %}
     class UIDTokenStream extends TokenStream{
       private Token token = new Token("_UID_",0,0);
       private byte[] buffer = new byte[4];
@@ -64,9 +68,11 @@ Lucky for us, Lucene 2.2 introduced Payloads, (a huge step towards flexible inde
     UIDTokenStream tokenStream = new UIDTokenStream();
     tokenStream.setUID(myUID);
     Field("uid",tokenStream);
+{% endhighlight %}
 
 When we load the uidArray, we do:
 
+{% highlight java %}
     TermPositions tp = null;
     byte[] dataBuffer = new byte[4];
     int[] uidArray = new int[indexReader.maxDoc()];
@@ -79,7 +85,7 @@ When we load the uidArray, we do:
         tp.getPayload(dataBuffer,0);
     
     // convert buffer to int
-        int uid = ((dataBuffer[3]& 0xFF) <<24)>
+        int uid = ((dataBuffer[3]& 0xFF) \<\<24)>
 
         uidArray[idx++]=uid;
       }
@@ -89,11 +95,12 @@ When we load the uidArray, we do:
         tp.close();
       }
     }
+{% endhighlight %}
 
 Looking up the uid is same as before, simply an array lookup:
-
+{% highlight java %}
     int uid = uidArray[docid];
-
+{% endhighlight %}
 The difference here is when loading the uidArray, sequential seek is done for each docid while paying the penalty of byte[] -> int conversion. (Also to a previous point, this method introduces only 1 extra term to the entire index)
 
 We ran some performance numbers on a 2M-document index, loading from the FieldCache took more than 16.5 seconds, while loading the uidArray from payload took 430 ms, this is an improvement of over 38x! (this time was taken a while ago from my MacBook Pro using Lucene 2.2)
