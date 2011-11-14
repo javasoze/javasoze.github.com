@@ -1,0 +1,146 @@
+---
+layout: post
+title: Numeric Range Queries - A comparison
+---
+
+h1. {{ page.title }}
+
+h2. Problem:
+
+RangeQueries have long been problematic for Lucene. Internally, it constructs an OR query of TermQueries, each correspond to an entry in the term table with value that fall within the specified range.
+
+When the range covers many terms, this approach has a term upper bound of BooleanQuery.getMaxClauseCount() (or a TooManyClauses runtime exception will be thrown)
+And it can be really slow!
+
+h2. Solutions:
+
+This blog examines the available alternatives and provides some performances analysis. (Without loss of generality, we will look at range query handling only on integer values, though the approaches to be discussed support all numeric types)
+
+*NumericRangeQuery:*
+
+As part of the recent Lucene 2.9.x release, Uwe Schindler introduced NumericRangeQuery which aims to solve this problem. (good documentation in the javadoc: "http://lucene.apache.org/java/3_4_0/api/core/org/apache/lucene/search/NumericRangeQuery.html":http://lucene.apache.org/java/3_4_0/api/core/org/apache/lucene/search/NumericRangeQuery.html) I will not do this any injustice by trying to explain details of this algorithm.
+
+*FieldCacheQuery:*
+There is however, another approach by using the FieldCache:
+
+1) obtain the int[] from FieldCache.getInts()
+2) iterate thru each element and collect it as a hit if it falls within the specified range.
+
+Code snippets:
+
+{% highlight java %}
+static Query buildFieldCacheQuery(final int start,final int end){
+
+Filter f = new Filter(){
+
+@Override
+public DocIdSet getDocIdSet(IndexReader reader) throws IOException {
+  final int[] data = FieldCache.DEFAULT.getInts(reader, FIELDCACHE_FIELD);
+  return new DocIdSet(){
+
+  @Override
+  public DocIdSetIterator iterator() throws IOException {
+    return new DocIdSetIterator() {
+     int docid=-1;
+     
+     @Override
+     public int advance(int target) throws IOException {
+       docid=target-1;
+       return nextDoc();
+     }
+
+     @Override
+     public int docID() {
+       return docid;
+     }
+
+     @Override
+     public int nextDoc() throws IOException {
+       int val;
+       docid++;
+       while(docidlength){
+         val = data[docid];
+         if (val>start && val
+           return docid;
+           else docid++;
+         }
+         return DocIdSetIterator.NO_MORE_DOCS;
+       }
+    };
+  }
+};
+}
+};
+  
+return new ConstantScoreQuery(f);
+}
+
+{% endhighlight %}
+
+Comparison:
+
+Index structure:
+
+
+{% highlight java %}
+NumericField numericField = new NumericField(NUMERIC_FIELD, 4);
+    numericField.setIntValue(n);
+    doc.add(numericField);
+
+Field fieldCacheField = new Field(FIELDCACHE_FIELD,String.valueOf(n),Store.NO,Index.NOT_ANALYZED_NO_NORMS);
+    fieldCacheField.setOmitTermFreqAndPositions(true);
+    doc.add(fieldCacheField);
+
+Field rangeField = new Field(RANGE_FIELD,format.format(n),Store.NO,Index.NOT_ANALYZED_NO_NORMS);
+    rangeField.setOmitTermFreqAndPositions(true);
+    doc.add(rangeField);
+{% endhighlight %}
+
+Following are the results:
+
+JVM settings: -server -Xms1g -Xmx1g
+
+The test measures different range lengths with respect to the possible values in the index, e.g. Range 1% would correspond to the range [0 - 10000] on a index size 1M docs
+
+Index Size - 1M docs:
+
+Range %:
+|_.RangeQuery |_.NumericRangeQuery |_.FieldCacheRangeQuery |
+| 1% | 202 ms | 1 ms | 1 ms |
+| 5% | 2047 ms | 3 ms |2 ms |
+| 20% | NA |9 ms | 5 ms |
+| 50% | NA |17 ms | 9 ms |
+| 100% | NA |26 ms | 9 ms |
+
+
+Index Size - 5M docs, No longer measuring RangeQuery to stop beating the dead horse
+
+Range %:
+|_.NumericRangeQuery |_.FieldCacheRangeQuery |
+| 1% | 6 ms | 8 ms |
+| 5% | 15 ms | 11 ms |
+| 20% | 38 ms | 27 ms |
+| 50% | 75 ms | 47 ms |
+| 100% | 128 ms | 43 ms |
+
+
+Index Size - 10M docs
+Range %:
+|_.NumericRangeQuery |_.FieldCacheRangeQuery |
+| 1% | 10 ms | 16 ms |
+| 5% | 28 ms | 23 ms |
+| 20% | 84 ms | 53 ms |
+| 50% | 153 ms | 97 ms |
+| 100% | 249 ms | 92 ms |
+
+
+Conclusion & Observations:
+
+* Don't use RangeQuery! (Good thing it is deprecated in Lucene 2.9.x)
+* As index size increases, when the range is small, NumericRangeQuery slows down rather gracefully (less than linear), FieldCacheQuery slows down linearly.
+* As index size increases, when the range is large, NumericRangeQuery slows down almost linearly, and FieldCacheQuery plateaus at 50%.
+* If you expect your range covers >=5% of the corpus, FieldCacheQuery is faster.
+* FieldCacheQuery code snippet above can be easily changed to support Lucene 2.4.x for those of you that have not upgraded.
+* The FieldCacheQuery idea can be applied similarly to non-numeric fields, e.g. range of texts.
+* FieldCacheQuery assumes a one-time cost in index load (for the FieldCache), but the cost is necessary if you want to do sorting.
+* If you want to do range query on a really large index, consider sharding your index.
