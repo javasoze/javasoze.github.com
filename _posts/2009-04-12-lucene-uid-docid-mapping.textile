@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Lucene docid-uid mapping and Payload
+title: Lucene docid-uid Mapping and Payload
 ---
 
 h1. {{ page.title }}
