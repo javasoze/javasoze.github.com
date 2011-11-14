@@ -1,0 +1,101 @@
+---
+layout: default
+title: Lucene docid-uid mapping and Payload
+---
+
+h1. {{ page.title }}
+
+Lucene docids are internal integers representing documents in the index, and Lucene takes liberty in reassign docids to during segment merges and when expunging deleted documents. In general one needs to be very careful with dealing with docids when they are referenced in the application context because the document a docid refers to is expected to change at anytime.
+
+In many applications, it is very useful to have a quick way to map a Lucene docid to an external UID, e.g. a primary key in a database. For example, result filtering depending on an external document set. In the case of LinkedIn people search, filtering by a person's network on a text search result set, UID in this case being the member id. We needed a mechanism to map from a Lucene docid in a HitCollector.collect() very quickly to the corresponding UID.
+
+A common and naive practice is to keep the UID in a Stored field, e.g.
+
+{% highlight java %}
+    Field("uid",myUID,Store.YES,Index.No);
+{% endhighlight %}
+
+and retrieve the uid via:
+
+    int uid = Integer.parseInt(indexReader.document(docid).get("uid"));
+
+When recall (the number of hit candidates) is large, this method is streaming from the stored file for each hit, and thus does not perform.
+
+A better alternative is to use the FieldCache to load into an integer array a mapping from docid to uid for each docid in the index ,e.g. 0 to indexReader.maxDoc()
+(assuming uid is kept in the indexed field) e.g.
+
+    Field("uid",myUID,Store.NO,
+    Index.NOT_ANALYZED_NO_NORMS);
+
+When IndexReader loads, we load the "map array":
+
+    int[] uidArray = FieldCache.DEFAULT.getInts(indexReader,"uid");
+
+This is done once for a new IndexReader, and at search time, the mapping is just an array lookup:
+
+    int uid = uidArray[docid];
+
+which is rather fast.
+
+The problem here is that the number of terms in the uid field is equal to or very close to the number of documents in the index. To load from the FieldCache, a random seek is done for each term, which makes loading the uidArray extremely slow. This is fine if IndexReader does not load very often, but unfortunately for us, in a realtime search system, we don't have the luxury of such assumption. (This also, as a side effect, increases the total number of terms in the index and may impact search performance)
+
+Lucky for us, Lucene 2.2 introduced Payloads, (a huge step towards flexible indexing), which is the ability to allow arbitrary data to be added to the posting list. In our case, we would create an arbitrary term for every document, e.g. Term("uid","_UID_"), and attach a 4-byte uid value to each posting:
+
+    class UIDTokenStream extends TokenStream{
+      private Token token = new Token("_UID_",0,0);
+      private byte[] buffer = new byte[4];
+      private boolean returnToken = false;
+
+      void setUID(int uid){
+        buffer[0] = (byte)uid;
+        buffer[1] = (byte)(uid>>8);
+        buffer[2] = (byte)(uid>>16);
+        buffer[3] = (byte)(uid>>24);
+        token.setPayload(new Payload(buffer));
+        returnToken = true;
+      }
+
+      public Token next() throws IOException{
+        if (returnToken){ returnToken = false; return token; }
+        else { return null; }
+      }
+    }
+
+    UIDTokenStream tokenStream = new UIDTokenStream();
+    tokenStream.setUID(myUID);
+    Field("uid",tokenStream);
+
+When we load the uidArray, we do:
+
+    TermPositions tp = null;
+    byte[] dataBuffer = new byte[4];
+    int[] uidArray = new int[indexReader.maxDoc()];
+    try{
+      int idx = 0;
+      tp = indexReader.termPositions(new Term("uid","_UID_"));
+      while(tp.next()){
+        int doc = tp.doc();
+        tp.nextPosition();
+        tp.getPayload(dataBuffer,0);
+    
+    // convert buffer to int
+        int uid = ((dataBuffer[3]& 0xFF) <<24)>
+
+        uidArray[idx++]=uid;
+      }
+    }
+    finally{
+      if (tp!=null){
+        tp.close();
+      }
+    }
+
+Looking up the uid is same as before, simply an array lookup:
+
+    int uid = uidArray[docid];
+
+The difference here is when loading the uidArray, sequential seek is done for each docid while paying the penalty of byte[] -> int conversion. (Also to a previous point, this method introduces only 1 extra term to the entire index)
+
+We ran some performance numbers on a 2M-document index, loading from the FieldCache took more than 16.5 seconds, while loading the uidArray from payload took 430 ms, this is an improvement of over 38x! (this time was taken a while ago from my MacBook Pro using Lucene 2.2)
+
+This mechanism is built into Zoie Realtime Search and Indexing System used to filter out duplicate documents between in-memory indexes and the disk index. (Since they are independent indexes, only consistent id to filter from is the UID)
