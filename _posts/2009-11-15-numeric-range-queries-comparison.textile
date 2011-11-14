@@ -106,7 +106,7 @@ The test measures different range lengths with respect to the possible values in
 
 Index Size - 1M docs:
 
-|_.Range %  |  _.RangeQuery |  _.NumericRangeQuery |  _.FieldCacheRangeQuery |
+|_.Range  |_.RangeQuery |_.NumericRangeQuery |_.FieldCacheRangeQuery |
 | 1% | 202 ms | 1 ms | 1 ms |
 | 5% | 2047 ms | 3 ms |2 ms |
 | 20% | NA |9 ms | 5 ms |
@@ -116,7 +116,7 @@ Index Size - 1M docs:
 
 Index Size - 5M docs, No longer measuring RangeQuery to stop beating the dead horse:
 
-|_.Range % |  _.NumericRangeQuery |  _.FieldCacheRangeQuery |
+|_.Range  |_.NumericRangeQuery |_.FieldCacheRangeQuery |
 | 1% | 6 ms | 8 ms |
 | 5% | 15 ms | 11 ms |
 | 20% | 38 ms | 27 ms |
@@ -126,7 +126,7 @@ Index Size - 5M docs, No longer measuring RangeQuery to stop beating the dead ho
 
 Index Size - 10M docs:
 
-|_.Range % |_.NumericRangeQuery |_.FieldCacheRangeQuery |
+|_.Range |_.NumericRangeQuery |_.FieldCacheRangeQuery |
 | 1% | 10 ms | 16 ms |
 | 5% | 28 ms | 23 ms |
 | 20% | 84 ms | 53 ms |
