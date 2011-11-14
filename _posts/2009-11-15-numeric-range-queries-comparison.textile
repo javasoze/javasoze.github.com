@@ -84,16 +84,18 @@ Index structure:
 
 {% highlight java %}
 NumericField numericField = new NumericField(NUMERIC_FIELD, 4);
-    numericField.setIntValue(n);
-    doc.add(numericField);
+numericField.setIntValue(n);
+doc.add(numericField);
 
-Field fieldCacheField = new Field(FIELDCACHE_FIELD,String.valueOf(n),Store.NO,Index.NOT_ANALYZED_NO_NORMS);
-    fieldCacheField.setOmitTermFreqAndPositions(true);
-    doc.add(fieldCacheField);
+Field fieldCacheField = new Field(FIELDCACHE_FIELD,String.valueOf(n),
+                                  Store.NO,Index.NOT_ANALYZED_NO_NORMS);
+fieldCacheField.setOmitTermFreqAndPositions(true);
+doc.add(fieldCacheField);
 
-Field rangeField = new Field(RANGE_FIELD,format.format(n),Store.NO,Index.NOT_ANALYZED_NO_NORMS);
-    rangeField.setOmitTermFreqAndPositions(true);
-    doc.add(rangeField);
+Field rangeField = new Field(RANGE_FIELD,format.format(n),
+                             Store.NO,Index.NOT_ANALYZED_NO_NORMS);
+rangeField.setOmitTermFreqAndPositions(true);
+doc.add(rangeField);
 {% endhighlight %}
 
 Following are the results:
@@ -104,8 +106,7 @@ The test measures different range lengths with respect to the possible values in
 
 Index Size - 1M docs:
 
-Range %:
-|_.RangeQuery |_.NumericRangeQuery |_.FieldCacheRangeQuery |
+|_.Range %  |  _.RangeQuery |  _.NumericRangeQuery |  _.FieldCacheRangeQuery |
 | 1% | 202 ms | 1 ms | 1 ms |
 | 5% | 2047 ms | 3 ms |2 ms |
 | 20% | NA |9 ms | 5 ms |
@@ -113,11 +114,9 @@ Range %:
 | 100% | NA |26 ms | 9 ms |
 
 
-Index Size - 5M docs, No longer measuring RangeQuery to stop beating the dead horse
+Index Size - 5M docs, No longer measuring RangeQuery to stop beating the dead horse:
 
-Range %:
-
-|_.NumericRangeQuery |_.FieldCacheRangeQuery |
+|_.Range % |  _.NumericRangeQuery |  _.FieldCacheRangeQuery |
 | 1% | 6 ms | 8 ms |
 | 5% | 15 ms | 11 ms |
 | 20% | 38 ms | 27 ms |
@@ -125,10 +124,9 @@ Range %:
 | 100% | 128 ms | 43 ms |
 
 
-Index Size - 10M docs
-Range %:
+Index Size - 10M docs:
 
-|_.NumericRangeQuery |_.FieldCacheRangeQuery |
+|_.Range % |_.NumericRangeQuery |_.FieldCacheRangeQuery |
 | 1% | 10 ms | 16 ms |
 | 5% | 28 ms | 23 ms |
 | 20% | 84 ms | 53 ms |
