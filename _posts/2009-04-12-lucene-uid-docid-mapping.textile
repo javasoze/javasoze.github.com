@@ -12,7 +12,7 @@ In many applications, it is very useful to have a quick way to map a Lucene doci
 A common and naive practice is to keep the UID in a Stored field, e.g.
 
 {% highlight java %}
-Field("uid",myUID,Store.YES,Index.No);
+    Field("uid",myUID,Store.YES,Index.No);
 {% endhighlight %}
 
 and retrieve the uid via:
@@ -50,6 +50,7 @@ The problem here is that the number of terms in the uid field is equal to or ver
 Lucky for us, Lucene 2.2 introduced Payloads, (a huge step towards flexible indexing), which is the ability to allow arbitrary data to be added to the posting list. In our case, we would create an arbitrary term for every document, e.g. Term("uid","_UID_"), and attach a 4-byte uid value to each posting:
 
 {% highlight java %}
+<code>
     class UIDTokenStream extends TokenStream{
       private Token token = new Token("_UID_",0,0);
       private byte[] buffer = new byte[4];
@@ -73,6 +74,7 @@ Lucky for us, Lucene 2.2 introduced Payloads, (a huge step towards flexible inde
     UIDTokenStream tokenStream = new UIDTokenStream();
     tokenStream.setUID(myUID);
     Field("uid",tokenStream);
+</code>
 {% endhighlight %}
 
 When we load the uidArray, we do:
