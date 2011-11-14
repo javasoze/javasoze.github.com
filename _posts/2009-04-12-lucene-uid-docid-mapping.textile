@@ -90,7 +90,7 @@ When we load the uidArray, we do:
         tp.getPayload(dataBuffer,0);
     
     // convert buffer to int
-        int uid = ((dataBuffer[3]& 0xFF) \<\<24)>
+        int uid = ((dataBuffer[3]& 0xFF) << 24)>
 
         uidArray[idx++]=uid;
       }
@@ -103,11 +103,13 @@ When we load the uidArray, we do:
 {% endhighlight %}
 
 Looking up the uid is same as before, simply an array lookup:
+
 {% highlight java %}
     int uid = uidArray[docid];
 {% endhighlight %}
+
 The difference here is when loading the uidArray, sequential seek is done for each docid while paying the penalty of byte[] -> int conversion. (Also to a previous point, this method introduces only 1 extra term to the entire index)
 
 We ran some performance numbers on a 2M-document index, loading from the FieldCache took more than 16.5 seconds, while loading the uidArray from payload took 430 ms, this is an improvement of over 38x! (this time was taken a while ago from my MacBook Pro using Lucene 2.2)
 
-This mechanism is built into Zoie Realtime Search and Indexing System used to filter out duplicate documents between in-memory indexes and the disk index. (Since they are independent indexes, only consistent id to filter from is the UID)
+This mechanism is built into "Zoie Realtime Search":http://javasoze.github.com/zoie and Indexing System used to filter out duplicate documents between in-memory indexes and the disk index. (Since they are independent indexes, only consistent id to filter from is the UID)
