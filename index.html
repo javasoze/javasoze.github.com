@@ -5,12 +5,7 @@ title: Javasoze
 
 <div id="main">
   <div id="home">
-    <h1>Blog Posts</h1>
-    <ul class="posts">
-      {% for post in site.posts %}
-        <li><span>{{ post.date | date_to_string }}</span> &raquo; <a href="{{ post.url }}">{{ post.title }}</a></li>
-      {% endfor %}
-    </ul>
+    
 
     <h1>Products I worked/working on: </h1>
     <ul>
@@ -33,7 +28,7 @@ title: Javasoze
 		
 	  </li>
 	</ul>
-    
+    <br/>
     <h1>My projects:</h1>
     <ul class="posts">
       <li><a href="http://senseidb.com/">Sensei:</a> Distributed searchable database.</li>
@@ -66,17 +61,4 @@ title: Javasoze
     </p>
   </div>
 </div>   
-<div id="sidebar">
-  <div>
-    <img src="http://www.gravatar.com/avatar/64612244c5673597451cabf55780003b.png"/><br/>
-    <p>My name is <b>John Wang.</b></p>
-    
-    <p>I am the Search Architect at <a href="http://www.linkedin.com">LinkedIn.com</a></p>
-
-	<p>I am an avid open source developer, follow me on Github: <a href="http://www.github.com/javasoze">http://www.github.com/javasoze</a></p>
-  
-    <p>Follow me on twitter: <a href="http://twitter.com/javasoze">@javasoze</a></p>
-  </div>
-  
-</div>
 

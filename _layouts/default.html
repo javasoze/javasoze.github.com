@@ -7,53 +7,70 @@
    <title>{{ page.title }}</title>
    <meta name="author" content="John Wang" />
 
-   <!-- syntax highlighting CSS -->
-   <link rel="stylesheet" href="/css/syntax.css" type="text/css" />
 
-   <!-- Homepage CSS -->
-   <link rel="stylesheet" href="/css/screen.css" type="text/css" media="screen, projection" />
+    <script src="http://code.jquery.com/jquery-1.4.4.js"></script>
+    <script type="text/javascript" src="/js/prettify.js"></script>
 
-   <!-- Typekit -->
-   <script type="text/javascript" src="http://use.typekit.com/mba8kod.js"></script>
-   <script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+
+   <link rel="stylesheet" href="/css/bootstrap.min.css" type="text/css" />
+   <link rel="stylesheet" href="/css/prettify.css" type="text/css" />
+   <style type="text/css">
+     body {
+       padding-top: 60px;
+     }
+   </style>
+
 </head>
-<body>
 
-<div class="site">
-  <div class="title">
-    <a href="/">Javasoze</a>
-    <a class="extra" href="/">About</a>
-    <a class="extra" title="GitHub" target="_blank" href="http://github.com/javasoze">GitHub</a>
-    <a class="extra" title="LinkedIn" target="_blank" href="http://www.linkedin.com/in/javasoze">LinkedIn</a>
-    <a class="extra" title="Twitter" target="_blank" href="http://twitter.com/javasoze">Twitter</a>
-  </div>
+<body onload="prettyPrint()">
 
- {{ content }}
-  
-  <div id="footer" class="footer">
-   <div class="contact">
-      <p>
-        John Wang<br />
-        (javasoze)<br />
-        john.wang at gmail.com
-      </p>
+    <div class="topbar">
+      <div class="topbar-inner">
+        <div class="container-fluid">
+          <a class="brand" href="index.html">SenseiDB</a>
+          <ul class="nav">
+            <li><a href="/">Home</a></li>
+            <li><a target="_blank" href="http://github.com/javasoze">GitHub</a></li>
+            <li><a target="_blank" href="http://www.linkedin.com/in/javasoze">LinkedIn</a></li>
+            <li><a  target="_blank" href="http://twitter.com/javasoze">Twitter</a></li>
+          </ul>
+        </div>
+      </div>
     </div>
-    <div class="contact">
-      <p>
-        <a href="http://github.com/javasoze/">github.com/javasoze</a><br />
-        <a href="http://twitter.com/javasoze/">twitter.com/javasoze</a><br />
-      </p>
-    </div>
-<!--    <div class="rss">
-      <a href="http://feeds.feedburner.com/RubyOnZigzag">
-        <img src="/images/rss.png" alt="Subscribe to RSS Feed" />
-      </a>
--->
-    </div>
+
+
+<div class="container-fluid">
+    <div class="sidebar">
+	<div class="well">
+		<img src="http://www.gravatar.com/avatar/64612244c5673597451cabf55780003b.png"/><br/>
+	    <p>My name is <b>John Wang.</b></p>
+
+	    <p>I am the Search Architect at <a href="http://www.linkedin.com">LinkedIn.com</a></p>
+
+		<p>I am an avid open source developer, follow me on Github: <a href="http://www.github.com/javasoze">http://www.github.com/javasoze</a></p>
+
+	    <p>Follow me on twitter: <a href="http://twitter.com/javasoze">@javasoze</a></p>
+		<div>
+			<h3>Blog Posts</h3>
+		    <ul>
+		      {% for post in site.posts %}
+		        <li><span>{{ post.date | date_to_string }}</span> &raquo; <br/><a href="{{ post.url }}">{{ post.title }}</a></li>
+		      {% endfor %}
+		    </ul>
+		</div>
+	</div>
+	</div>
+    <div class="content">
+        {{content}}
+
+
+        <footer>
+          	<p>&copy; javsoze.com 2012</p>
+        </footer>
+      </div>
   </div>
 </div>
 
-<a href="http://github.com/javasoze"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png" alt="Fork me on GitHub" /></a>
 <script type="text/javascript">
 
   var _gaq = _gaq || [];

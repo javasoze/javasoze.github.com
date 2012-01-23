@@ -1,0 +1,61 @@
+---
+layout: post
+title: Making Boolean Queries Faster
+---
+
+<div class="hero-unit">
+<h2> {{ page.title }}</h2>
+</div>
+
+<p>
+At work today, we were looking to optimize boolean queries of the type:
+</p>
+
+<pre><code>f1:v1^b1 OR f1:v2^b2 OR f1:v3^b3 ...</code></pre>
+
+<p>
+and
+</p>
+
+<pre><code>f1:v1^b1 AND f1:v2^b2 AND f1:v3^b3 ...</code></pre>
+<p>
+where f1 is a field of some structured data (e.g. Analyzed=No, tf=No, norm=No)
+</p>
+<p>
+We see that this type of query has these patterns:
+<ul>
+	<li>all values are in the same field</li>
+    <li>all clauses have the same operator joining them</li>
+</ul>
+</p>
+<p>
+When the number of clause is large, BooleanQuery can be rather slow.
+</p>
+<p>
+As of Lucene 2.4, Lucene query api has adopted <a href="http://lucene.apache.org/java/3_4_0/api/core/org/apache/lucene/search/DocIdSet.html">DocIdSet</a>, and <a href="http://lucene.apache.org/java/3_4_0/api/core/org/apache/lucene/search/DocIdSetIterator.html">DocIdSetIterator</a> abstractions, which opened doors for various query optimizations. (IMHO, this is one of the best improvements in Lucene from an API stand point.)
+</p>
+<p>
+For our project, we have quite a few OR-clauses, and the search performance was pretty bad.
+</p>
+<p>
+Instead, when the index loads, we load into memory a data structure very much like the <code>FieldCache.StringIndex</code>. In a 5 million index shard, for a field containing N values, memory footprint is approximately 20MB + N Strings.
+</p>
+<p>
+Given K clauses in our OR query, we build a bit-set with K bits turned on, each bit corresponding to an index into String array. (max bit is N)
+</p>
+<p>
+We then built a DocIdSetIterator that iterates the order array and checks to see if the order[i]-bit is turned on in the bit-set.
+</p>
+<p>
+The resulting performance is quite encouraging: As the number of clauses increases, the iteration time is capped. From our benchmark, when we get to 10+ clauses, the performance gain is approximately 8x!
+</p>
+<p>
+Here is a detailed write-up:
+<a href="http://linkedin.jira.com/wiki/display/BOBO/Facet+Query">http://linkedin.jira.com/wiki/display/BOBO/Facet+Query</a>
+</p>
+<p>
+This is an example of how good API design can open doors to things such as what we were able to do.
+</p>
+<p>
+Kudos to the Lucene team for the DocIdSet api!
+</p>
