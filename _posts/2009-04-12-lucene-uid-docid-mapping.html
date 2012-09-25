@@ -3,11 +3,6 @@ layout: post
 title: Lucene docid-uid Mapping and Payload
 ---
 
-
-<div class="hero-unit">
-<h2> {{ page.title }}</h2>
-</div>
-
 <p>
 Lucene docids are internal integers representing documents in the index, and Lucene takes liberty in reassign docids to during segment merges and when expunging deleted documents. In general one needs to be very careful with dealing with docids when they are referenced in the application context because the document a docid refers to is expected to change at anytime.
 </p>

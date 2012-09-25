@@ -1,0 +1,38 @@
+---
+layout: post
+title: Storing UID with Column Stride Fields
+---
+
+<p>
+In an <a href="/2009/04/12/lucene-uid-docid-mapping.html">earlier post</a>, I discussed a technique to store an application provided UID for a document using Payloads that allows for fast loading and lookup via a Lucene internal docid. I reran the test program on my new laptop, and for 2M docs with randomly generated UIDs of type long, loading into a lookup array took 90ms.
+</p>
+
+<p>
+With the beta release of Lucene 4.0.0, a new feature called Column Stride Fields was introduced. Column Stride Fields provide a forward lookup from a Lucene internal docid to a typed value, which makes storing an UID of type long a perfect use-case for it.
+</p>
+
+<p>
+I modified my test program to store the UID instead of Payloads, into a Column Stride Field:
+<pre class="prettyprint">
+// indexing
+for (long id : uniqIds){
+   Document doc = new Document();
+   Field fld = new LongDocValuesField("_ID", id);
+   doc.add(fld);
+   writer.addDocument(doc);
+}
+
+// loading
+AtomicReader reader = ...
+
+DocValues docVals = ar.docValues("_ID");
+long[] uidArray = (long[]) docVals.getSource().getArray();
+</pre>
+</p>
+<p>	
+As you can see, the code is much simpler: No need to construct a fake token stream and no need to encode into and decode from a byte array from a long etc. Intuition says this would be faster too since we know the type ahead of the time and conversion between long and byte[] can be avoided. So I re-timed the program, and loading the array took 43ms. That is more than a 200% speed-up!
+</p>
+<p>
+Details of Column Stride Fields can be found <a href="http://www.slideshare.net/lucenerevolution/willnauer-simon-doc-values-column-stride-fields-in-lucene" target="new">here</a>.
+Kudos to <a href="https://twitter.com/s1m0nw" target="new">Simon Willnauer</a> for implementing this!
+</p>
