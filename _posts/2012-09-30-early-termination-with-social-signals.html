@@ -1,0 +1,29 @@
+---
+layout: post
+title: Early termination with social signals
+---
+<h2>Early termination</h2>
+<p>
+  Early termination is a common technique used in search engine development to reduce query latency on large indexes. The idea is simple, if we were order the posting-list in decreasing significances or relevance order measured by a query-independent static rank, e.g. Google's PageRank on a webpage. Then, as we process the posting list, we can break out when we have collected enough hits before finish walking the entire list.
+</p>
+<p>
+  An important observation is that with early termination, the query latency does not grow linearly as index size grows. To return only the top N hits is very consistent with a search engine's access pattern.
+</p>
+<p>
+	The following simple code snippet illustrates how this works:
+	<pre class="prettyprint">
+	    int numHitsRequested = ...
+	    int numHitsCollected = ...
+	    int docid = ...
+	    ...
+	    public int nextDoc(){
+		  if (docid != NO_MORE_DOCS &amp;&amp; numHitsCollected &lt; numHitsRequested){
+		    return (docid = nextHit());	
+		  }
+		  else{
+		    return (docid = NO_MORE_DOCS);
+		  }
+	    }
+	</pre>
+</p>
+<h2>User/People search</2>
