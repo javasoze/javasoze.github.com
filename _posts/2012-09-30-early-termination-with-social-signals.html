@@ -4,26 +4,47 @@ title: Early termination with social signals
 ---
 <h2>Early termination</h2>
 <p>
-  Early termination is a common technique used in search engine development to reduce query latency on large indexes. The idea is simple, if we were order the posting-list in decreasing significances or relevance order measured by a query-independent static rank, e.g. Google's PageRank on a webpage. Then, as we process the posting list, we can break out when we have collected enough hits before finish walking the entire list.
+  Early termination is a common technique used in search engine development to reduce query latency on large indexes. The idea is simple, if we were to order the posting-list in decreasing significances or relevance order measured by some sort of query-independent static rank, e.g. Google's PageRank on a webpage. Then, as we process the posting list, we can terminate posting traversal when we have collected enough hits before finish walking the entire list.
 </p>
 <p>
   An important observation is that with early termination, the query latency does not grow linearly as index size grows. To return only the top N hits is very consistent with a search engine's access pattern.
 </p>
 <p>
 	The following simple code snippet illustrates how this works:
-	<pre class="prettyprint">
-	    int numHitsRequested = ...
-	    int numHitsCollected = ...
-	    int docid = ...
-	    ...
-	    public int nextDoc(){
-		  if (docid != NO_MORE_DOCS &amp;&amp; numHitsCollected &lt; numHitsRequested){
-		    return (docid = nextHit());	
-		  }
-		  else{
-		    return (docid = NO_MORE_DOCS);
-		  }
-	    }
-	</pre>
+<pre class="prettyprint">
+int numHitsRequested = ...
+int numHitsCollected = ...
+
+int docid = ...
+...
+public int nextDoc(){
+  if (docid != NO_MORE_DOCS &amp;&amp; numHitsCollected &lt; numHitsRequested){
+    return (docid = nextHit());	
+  }
+  else{
+	return (docid = NO_MORE_DOCS);
+  }
+}
+</pre>
 </p>
-<h2>User/People search</2>
+<h2>User/People search</h2>
+<p>
+	In the world of social search, one common use-case is to search for people. In such a context, a person is represented as a document and add into a user index. There are many signals to produce static ranks for a given user, i.e.: page-rank like score from the social graph, activity information etc. As we build the index, we can build the posting list in descending order of the static rank, and apply early termination at query-time.
+</p>
+<h3>Social Signals</h3>
+<p>
+	Social information are strong signals when we search for people, i.e. we want to give importance to people in our immediate and extended networks. This is a strong signal to compute ranking on an user index, unfortunately, this cannot be incorporated in to the static rank and is query-dependent.
+</p>
+<p>
+	It is ideal to be able to early terminate for a given query on the condition:
+</p>
+<p>
+	We terminate iterating the posing list if:
+</p>
+<p class="lead">
+	Number of users collected reached number of hits requested AND all users in the social networks have been examined.
+</p>
+<h3>User to doc mapping</h3>
+<p>
+</p>
+	
