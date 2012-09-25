@@ -25,7 +25,7 @@ for (long id : uniqIds){
 // loading
 AtomicReader reader = ...
 
-DocValues docVals = ar.docValues("_ID");
+DocValues docVals = reader.docValues("_ID");
 long[] uidArray = (long[]) docVals.getSource().getArray();
 </pre>
 </p>
