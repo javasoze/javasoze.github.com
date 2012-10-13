@@ -33,10 +33,10 @@ public int nextDoc(){
 </p>
 <h3>Social Signals</h3>
 <p>
-	Social information are strong signals when we search for people, i.e. we want to give importance to people in our immediate and extended networks. This is a strong signal to compute ranking on an user index, unfortunately, this cannot be incorporated in to the static rank and is query-dependent.
+	Social information are strong signals when we search for people, i.e. we want to give importance to people in our immediate and extended networks. Unfortunately, this cannot be incorporated in to the static rank because it is query-dependent.
 </p>
 <p>
-	It is ideal to be able to early terminate for a given query on the condition:
+	So it is desirable to augment the early termination logic above for the following condition:
 </p>
 <p>
 	We terminate iterating the posing list if:
@@ -46,5 +46,7 @@ public int nextDoc(){
 </p>
 <h3>User to doc mapping</h3>
 <p>
+	In a <a href="/2012/09/24/lucene-uid-docid-mapping.html">previous post</a>, we discussed a way to store UIDs that we can later construct an array indexed by docids for fast docid-Uid mapping. From this lookup array, we then construct a fast hash to map from Uids back to docids. So given a set of UIDs, we can map them back into the docid-space. See <a href="#">this class</a> in <a href="#">Zoie</a> which implements such a hash. I timed on my laptop, a map takes approximately 120 nanoseconds. So for mapping 10,000 UIDs, it would take slightly more than 1ms.
 </p>
+<h3>Building a DocIdSetIterator</h3>
 	
